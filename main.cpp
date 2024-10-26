@@ -1,35 +1,20 @@
 #include "Semi_honest_security.h"
-#include <chrono>
-#include <cstdio>
-using namespace std::chrono;
-
 
 int main() {
-
-    auto start_time = high_resolution_clock::now(); // 记录函数开始时间
 
     // 初始化半诚实安全下的操作
     init_semi_honest_security();
 
-    auto end_time = high_resolution_clock::now(); // 记录函数结束时间
-    duration<double, milli> total_duration = end_time - start_time;
-    printf("初始化半诚实安全下的操作所需时间是：%f 毫秒\n", total_duration.count());
-    fflush(stdout);
-
-    start_time = high_resolution_clock::now(); // 记录函数开始时间
-
     // 半诚实安全条件下获取排序
     semi_honest_sort();
 
-    end_time = high_resolution_clock::now(); // 记录函数结束时间
-    total_duration = end_time - start_time;
-    printf("半诚实安全条件下获取排序的时间是：%f 毫秒\n", total_duration.count());
-    fflush(stdout);
+    // 半诚实安全条件下应用排序
+    semi_honest_apply_sort();
 
-    // 校验置换的正确性
+    // 校验获取排序的正确性
     bool flag = true;
 
-    vector<int> ans(N), t(N);
+    vector<long long> ans(N), t(N);
     for (int i = 0; i < N; i++) {
         ans[i] = i + 1;
     }
@@ -47,9 +32,31 @@ int main() {
     }
 
     if (flag) {
-        printf("半诚实安全下的置换是正确的!\n");
+        printf("经过校验得出结论：半诚实安全下<获取>置换是<正确>的!\n");
     } else {
-        printf("半诚实安全下的置换是错误的!\n");
+        printf("经过校验得出结论：半诚实安全下<获取>置换是<错误>的!\n");
+    }
+
+    // 校验应用排序的正确性
+    flag = true;
+    for (int i = 0; i < N; i++) {
+        ans[i] = 0;
+        for (int j = 0; j < L; j++) {
+            ans[i] = ans[i] * 2 + (p1.x1[i][j] + p1.x2[i][j] + p2.x2[i][j]);
+        }
+    }
+    stable_sort(data.begin(), data.end());
+    for (int i = 0; i < N; i++) {
+        if (ans[i] != data[i]) {
+            flag = false;
+            break;
+        }
+    }
+
+    if (flag) {
+        printf("经过校验得出结论：半诚实安全下<应用>置换是<正确>的!\n");
+    } else {
+        printf("经过校验得出结论：半诚实安全下<应用>置换是<错误>的!\n");
     }
 
     return 0;

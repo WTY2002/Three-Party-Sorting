@@ -17,16 +17,23 @@
 #include <openssl/rand.h>
 #include <cstring>
 #include <algorithm>
+#include <chrono>
+#include <cstdio>
 using namespace std;
+using namespace std::chrono;
 
-// 8比特长度，最大值为2^8-1
-#define MAX_8 255ULL
 
-// 32比特长度，最大值为2^32-1
-#define MAX_32 4294967295ULL
+// 8比特长度，最大值为2^7-1
+#define MAX_8 127
 
-// 64比特长度，最大值为2^64-1
-#define MAX_64 18446744073709551615ULL
+// 32比特长度，最大值为2^31-1
+#define MAX_32 2147483647
+
+// 64比特长度，最大值为2^63-1
+#define MAX_64 9223372036854775807LL
+
+// 模数，用于模运算，取值为2^61-1
+#define MOD 2305843009213693951LL
 
 // 数据量的大小
 extern int N;
@@ -35,26 +42,29 @@ extern int N;
 extern int L;
 
 // 原始数据
-extern vector<unsigned long long> data;
+extern vector<long long> data;
 
 // 服务器
 struct Sever {
     // 服务器持有的数据份额
-    vector<vector<int>> x1, x2;
+    vector<vector<long long>> x1, x2;
     // 服务器持有的置换份额
-    vector<int> π1;
-    vector<int> π2;
+    vector<long long> π1;
+    vector<long long> π2;
     // 服务器持有的逆置换份额
-    vector<int> π1_inv;
-    vector<int> π2_inv;
+    vector<long long> π1_inv;
+    vector<long long> π2_inv;
     // 单比特排序的置换
-    vector<int> ρ1, ρ2;
+    vector<long long> ρ1, ρ2;
     // 暂存，用于后续组合两个置换
-    vector<int> σ1, σ2;
+    vector<long long> σ1, σ2;
 };
 
 // 服务器
 extern Sever p1, p2, p3;
+
+// 共享的数据备份
+extern vector<vector<long long>> x1_backups, x2_backups, x3_backups;
 
 /**
  * @Method initSever 初始化云服务器
@@ -72,9 +82,9 @@ void readDataFromFile(const char* filename);
 /**
  * @Method decimalToBinary 将十进制数转换为二进制数
  * @param num 要转换的十进制数
- * @return vector<int> 二进制数
+ * @return vector<long long> 二进制数
  */
-vector<int> decimalToBinary(unsigned long long num);
+vector<long long> decimalToBinary(long long num);
 
 /**
  * @Method bitDecomposition 执行位分解
@@ -82,21 +92,21 @@ vector<int> decimalToBinary(unsigned long long num);
  * @param a, b, c 分解的比特
  * return void
  */
-void bitDecomposition(int index, int a, int b, int c);
+void bitDecomposition(int index, long long a, int b, int c);
 
 /**
  * @Method generateRandomInteger 生成一个指定范围内的随机整数
  * @param min 最小值
  * @param max 最大值
- * @return unsigned long long 随机整数
+ * @return long long 随机整数
  */
-unsigned long long generateRandomInteger(unsigned long long min, unsigned long long max);
+long long generateRandomInteger(long long min, long long max);
 
 /**
  * @Method Generateshuffle 生成一个随机置换
- * @return vector<int> 随机置换
+ * @return vector<long long> 随机置换
  */
-vector<int> Generateshuffle();
+vector<long long> Generateshuffle();
 
 /**
  * @Method generateSharedShuffle 生成共享的随机置换
@@ -111,7 +121,7 @@ void generateSharedShuffle();
  * @param index 索引
  * @return void
  */
-void singleShuffle(vector<vector<int>> &x, vector<int> &π, int index);
+void singleShuffle(vector<vector<long long>> &x, vector<long long> &π, int index);
 
 /**
  * @Method singleShuffle 对数据单次置换
@@ -119,7 +129,7 @@ void singleShuffle(vector<vector<int>> &x, vector<int> &π, int index);
  * @param π 置换π
  * @return void
  */
-void singleShuffle(vector<int> &ρ, vector<int> &π);
+void singleShuffle(vector<long long> &ρ, vector<long long> &π);
 
 /**
  * @Method shufflingProtocol 完整的shuffling协议
@@ -196,5 +206,25 @@ void init_semi_honest_security();
  * @return void
  */
 void semi_honest_sort();
+
+/**
+ * @Method singleShuffle 对数据的整体进行单次置换
+ * @param x 数据
+ * @param π 置换
+ * @return void
+ */
+void singleShuffle(vector<vector<long long>> &x, vector<long long> &π);
+
+/**
+ * @Method shufflingProtocol 完整的shuffling协议，对整体进行洗牌
+ * @return void
+ */
+void shufflingProtocol();
+
+/**
+ * @Method: semi_honest_apply_sort 半诚实安全条件下应用排序
+ * @return void
+ */
+void semi_honest_apply_sort();
 
 #endif //SEMI_HONEST_SECURITY_H

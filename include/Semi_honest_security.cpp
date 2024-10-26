@@ -1,6 +1,6 @@
 /**
 * @author: WTY
-* @date: 2024/10/19
+* @date: 2024/100/19
 * @description: Implement sorting under semi-honest and safe conditions
 */
 
@@ -13,10 +13,13 @@ int N = 0;
 int L = 32;
 
 // 原始数据
-vector<unsigned long long> data;
+vector<long long> data;
 
 // 服务器
 Sever p1, p2, p3;
+
+// 共享的数据备份
+vector<vector<long long>> x1_backups, x2_backups, x3_backups;
 
 /**
  * @Method initSever 初始化云服务器
@@ -72,12 +75,12 @@ void readDataFromFile(const char* filename) {
 
     // 读取第一行，获取数据量大小 N
     if (getline(file, line)) {
-        istringstream(line) >> N; // 直接读取为 unsigned long long N
+        istringstream(line) >> N; // 直接读取为 long long N
 
         // 读取第二行 N 个数字
         if (getline(file, line)) {
             istringstream iss(line);
-            unsigned long long number; // 修改为 unsigned long long
+            long long number; // 修改为 long long
             while (iss >> number) {
                 data.push_back(number); // 将无符号数存入 vector
             }
@@ -90,10 +93,10 @@ void readDataFromFile(const char* filename) {
 /**
  * @Method decimalToBinary 将十进制数转换为二进制数
  * @param num 要转换的十进制数
- * @return vector<int> 二进制数
+ * @return vector<long long> 二进制数
  */
-vector<int> decimalToBinary(unsigned long long num) {
-    vector<int> bits;
+vector<long long> decimalToBinary(long long num) {
+    vector<long long> bits;
 
     // 检查每一位
     for (int i = L - 1; i >= 0; --i) {
@@ -109,11 +112,11 @@ vector<int> decimalToBinary(unsigned long long num) {
  * @param a, b, c 分解的比特
  * return void
  */
-void bitDecomposition(int index, int a, int b, int c) {
+void bitDecomposition(int index, long long a, long long b, long long c) {
     // 将a，b，c转换为二进制
-    vector<int> a_bits = decimalToBinary(a);
-    vector<int> b_bits = decimalToBinary(b);
-    vector<int> c_bits = decimalToBinary(c);
+    vector<long long> a_bits = decimalToBinary(a);
+    vector<long long> b_bits = decimalToBinary(b);
+    vector<long long> c_bits = decimalToBinary(c);
 
     p1.x1[index].resize(L);
     p1.x2[index].resize(L);
@@ -122,27 +125,27 @@ void bitDecomposition(int index, int a, int b, int c) {
     p3.x1[index].resize(L);
     p3.x2[index].resize(L);
 
-    int a1, a2, a3, b1, b2, b3, c1, c2, c3;
-    int x1, x2, x3;
+    long long a1, a2, a3, b1, b2, b3, c1, c2, c3;
+    long long x1, x2, x3;
 
     // 进位标识初始化
-    int carry = 0;
+    long long carry = 0;
 
     // 逐位位分解
     for (int i = L - 1; i >= 0; --i) {
-        a1 = static_cast<int>(generateRandomInteger(0, 10));
-        a2 = static_cast<int>(generateRandomInteger(0, 10));
+        a1 = generateRandomInteger(0, 100);
+        a2 = generateRandomInteger(0, 100);
         a3 = a_bits[i] - a1 - a2;
-        b1 = static_cast<int>(generateRandomInteger(0, 10));
-        b2 = static_cast<int>(generateRandomInteger(0, 10));
+        b1 = generateRandomInteger(0, 100);
+        b2 = generateRandomInteger(0, 100);
         b3 = b_bits[i] - b1 - b2;
-        c1 = static_cast<int>(generateRandomInteger(0, 10));
-        c2 = static_cast<int>(generateRandomInteger(0, 10));
+        c1 = generateRandomInteger(0, 100);
+        c2 = generateRandomInteger(0, 100);
         c3 = c_bits[i] - c1 - c2;
         // 计算x1, x2, x3
-        x1 = a1 + b1 + c1 + carry;
-        x2 = a2 + b2 + c2;
-        x3 = a3 + b3 + c3;
+        x1 = (a1 + b1 + c1 + carry) % MOD;
+        x2 = (a2 + b2 + c2) % MOD;
+        x3 = (a3 + b3 + c3) % MOD;
 
         if (x1 + x2 + x3 >= 4) {
             carry = 2;
@@ -168,22 +171,22 @@ void bitDecomposition(int index, int a, int b, int c) {
  * @Method generateRandomInteger 生成一个指定范围内的随机整数
  * @param min 最小值
  * @param max 最大值
- * @return unsigned long long 随机整数
+ * @return long long 随机整数
  */
-unsigned long long generateRandomInteger(unsigned long long min, unsigned long long max) {
+long long generateRandomInteger(long long min, long long max) {
     random_device rd; // 获取随机数种子
     mt19937 gen(rd()); // 初始化随机数生成器
-    uniform_int_distribution<unsigned long long> dis(min, max); // 定义均匀分布
+    uniform_int_distribution<long long> dis(min, max); // 定义均匀分布
     return dis(gen); // 生成并返回随机整数
 }
 
 /**
  * @Method Generateshuffle 生成一个随机置换
- * @return vector<int> 随机置换
+ * @return vector<long long> 随机置换
  */
-vector<int> Generateshuffle() {
+vector<long long> Generateshuffle() {
     // 创建一个包含 1 到 N 的序列
-    vector<int> sequence(N);
+    vector<long long> sequence(N);
     for (int i = 0; i < N; ++i) {
         sequence[i] = i + 1; // 填充序列
     }
@@ -216,8 +219,8 @@ void generateSharedShuffle() {
  * @param index 索引
  * @return void
  */
-void singleShuffle(vector<vector<int>> &x, vector<int> &π, int index) {
-    vector<int> tmp(N);
+void singleShuffle(vector<vector<long long>> &x, vector<long long> &π, int index) {
+    vector<long long> tmp(N);
     for (int i = 0; i < N; ++i) {
         tmp[π[i] - 1] = x[i][index];
     }
@@ -232,8 +235,8 @@ void singleShuffle(vector<vector<int>> &x, vector<int> &π, int index) {
  * @param π 置换π
  * @return void
  */
-void singleShuffle(vector<int> &ρ, vector<int> &π) {
-    vector<int> tmp(N);
+void singleShuffle(vector<long long> &ρ, vector<long long> &π) {
+    vector<long long> tmp(N);
     for (int i = 0; i < N; ++i) {
         tmp[π[i] - 1] = ρ[i];
     }
@@ -255,15 +258,15 @@ void shufflingProtocol(int index) {
     singleShuffle(p3.x2, p3.π2, index);
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    int r1 = static_cast<int>(generateRandomInteger(0, 10));
-    int r2 = static_cast<int>(generateRandomInteger(0, 10));
-    int r3 = -r1 - r2;
+    long long r1 = generateRandomInteger(0, 100);
+    long long r2 = generateRandomInteger(0, 100);
+    long long r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p1.x1[i][index] += r1;
-        p1.x2[i][index] += r2;
-        p3.x1[i][index] += r3;
-        p3.x2[i][index] += r1;
+        p1.x1[i][index] = (p1.x1[i][index] + r1) % MOD;
+        p1.x2[i][index] = (p1.x2[i][index] + r2) % MOD;
+        p3.x1[i][index] = (p3.x1[i][index] + r3) % MOD;
+        p3.x2[i][index] = (p3.x2[i][index] + r1) % MOD;
     }
     // 将置换后的新数据发送给p2
     p2.x1 = p1.x2;
@@ -276,15 +279,15 @@ void shufflingProtocol(int index) {
     singleShuffle(p2.x2, p2.π1, index);
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    r1 = static_cast<int>(generateRandomInteger(0, 10));
-    r2 = static_cast<int>(generateRandomInteger(0, 10));
+    r1 = generateRandomInteger(0, 100);
+    r2 = generateRandomInteger(0, 100);
     r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p1.x1[i][index] += r1;
-        p1.x2[i][index] += r2;
-        p2.x1[i][index] += r2;
-        p2.x2[i][index] += r3;
+        p1.x1[i][index] = (p1.x1[i][index] + r1) % MOD;
+        p1.x2[i][index] = (p1.x2[i][index] + r2) % MOD;
+        p2.x1[i][index] = (p2.x1[i][index] + r2) % MOD;
+        p2.x2[i][index] = (p2.x2[i][index] + r3) % MOD;
     }
     // 将置换后的新数据发送给p3
     p3.x1 = p2.x2;
@@ -297,15 +300,15 @@ void shufflingProtocol(int index) {
     singleShuffle(p3.x2, p3.π1, index);
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    r1 = static_cast<int>(generateRandomInteger(0, 10));
-    r2 = static_cast<int>(generateRandomInteger(0, 10));
+    r1 = generateRandomInteger(0, 100);
+    r2 = generateRandomInteger(0, 100);
     r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p2.x1[i][index] += r2;
-        p2.x2[i][index] += r3;
-        p3.x1[i][index] += r3;
-        p3.x2[i][index] += r1;
+        p2.x1[i][index] = (p2.x1[i][index] + r2) % MOD;
+        p2.x2[i][index] = (p2.x2[i][index] + r3) % MOD;
+        p3.x1[i][index] = (p3.x1[i][index] + r3) % MOD;
+        p3.x2[i][index] = (p3.x2[i][index] + r1) % MOD;
     }
     // 将置换后的新数据发送给p1
     p1.x1 = p3.x2;
@@ -325,15 +328,15 @@ void shufflingProtocol_ρ() {
 
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    int r1 = static_cast<int>(generateRandomInteger(0, 10));
-    int r2 = static_cast<int>(generateRandomInteger(0, 10));
-    int r3 = -r1 - r2;
+    long long r1 = generateRandomInteger(0, 100);
+    long long r2 = generateRandomInteger(0, 100);
+    long long r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p1.ρ1[i] += r1;
-        p1.ρ2[i] += r2;
-        p3.ρ1[i] += r3;
-        p3.ρ2[i] += r1;
+        p1.ρ1[i] = (p1.ρ1[i] + r1) % MOD;
+        p1.ρ2[i] = (p1.ρ2[i] + r2) % MOD;
+        p3.ρ1[i] = (p3.ρ1[i] + r3) % MOD;
+        p3.ρ2[i] = (p3.ρ2[i] + r1) % MOD;
     }
     // 将置换后的新数据发送给p2
     p2.ρ1 = p1.ρ2;
@@ -347,15 +350,15 @@ void shufflingProtocol_ρ() {
 
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    r1 = static_cast<int>(generateRandomInteger(0, 10));
-    r2 = static_cast<int>(generateRandomInteger(0, 10));
+    r1 = generateRandomInteger(0, 100);
+    r2 = generateRandomInteger(0, 100);
     r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p1.ρ1[i] += r1;
-        p1.ρ2[i] += r2;
-        p2.ρ1[i] += r2;
-        p2.ρ2[i] += r3;
+        p1.ρ1[i] = (p1.ρ1[i] + r1) % MOD;
+        p1.ρ2[i] = (p1.ρ2[i] + r2) % MOD;
+        p2.ρ1[i] = (p2.ρ1[i] + r2) % MOD;
+        p2.ρ2[i] = (p2.ρ2[i] + r3) % MOD;
     }
     // 将置换后的新数据发送给p3
     p3.ρ1 = p2.ρ2;
@@ -369,15 +372,15 @@ void shufflingProtocol_ρ() {
 
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    r1 = static_cast<int>(generateRandomInteger(0, 10));
-    r2 = static_cast<int>(generateRandomInteger(0, 10));
+    r1 = generateRandomInteger(0, 100);
+    r2 = generateRandomInteger(0, 100);
     r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p2.ρ1[i] += r2;
-        p2.ρ2[i] += r3;
-        p3.ρ1[i] += r3;
-        p3.ρ2[i] += r1;
+        p2.ρ1[i] = (p2.ρ1[i] + r2) % MOD;
+        p2.ρ2[i] = (p2.ρ2[i] + r3) % MOD;
+        p3.ρ1[i] = (p3.ρ1[i] + r3) % MOD;
+        p3.ρ2[i] = (p3.ρ2[i] + r1) % MOD;
     }
     // 将置换后的新数据发送给p1
     p1.ρ1 = p3.ρ2;
@@ -396,15 +399,15 @@ void shufflingProtocol_σ() {
     singleShuffle(p3.σ2, p3.π2);
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    int r1 = static_cast<int>(generateRandomInteger(0, 10));
-    int r2 = static_cast<int>(generateRandomInteger(0, 10));
-    int r3 = -r1 - r2;
+    long long r1 = generateRandomInteger(0, 100);
+    long long r2 = generateRandomInteger(0, 100);
+    long long r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p1.σ1[i] += r1;
-        p1.σ2[i] += r2;
-        p3.σ1[i] += r3;
-        p3.σ2[i] += r1;
+        p1.σ1[i] = (p1.σ1[i] + r1) % MOD;
+        p1.σ2[i] = (p1.σ2[i] + r2) % MOD;
+        p3.σ1[i] = (p3.σ1[i] + r3) % MOD;
+        p3.σ2[i] = (p3.σ2[i] + r1) % MOD;
     }
     // 将置换后的新数据发送给p2
     p2.σ1 = p1.σ2;
@@ -417,15 +420,15 @@ void shufflingProtocol_σ() {
     singleShuffle(p2.σ2, p2.π1);
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    r1 = static_cast<int>(generateRandomInteger(0, 10));
-    r2 = static_cast<int>(generateRandomInteger(0, 10));
+    r1 = generateRandomInteger(0, 100);
+    r2 = generateRandomInteger(0, 100);
     r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p1.σ1[i] += r1;
-        p1.σ2[i] += r2;
-        p2.σ1[i] += r2;
-        p2.σ2[i] += r3;
+        p1.σ1[i] = (p1.σ1[i] + r1) % MOD;
+        p1.σ2[i] = (p1.σ2[i] + r2) % MOD;
+        p2.σ1[i] = (p2.σ1[i] + r2) % MOD;
+        p2.σ2[i] = (p2.σ2[i] + r3) % MOD;
     }
     // 将置换后的新数据发送给p3
     p3.σ1 = p2.σ2;
@@ -438,15 +441,15 @@ void shufflingProtocol_σ() {
     singleShuffle(p3.σ2, p3.π1);
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    r1 = static_cast<int>(generateRandomInteger(0, 10));
-    r2 = static_cast<int>(generateRandomInteger(0, 10));
+    r1 = generateRandomInteger(0, 100);
+    r2 = generateRandomInteger(0, 100);
     r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p2.σ1[i] += r2;
-        p2.σ2[i] += r3;
-        p3.σ1[i] += r3;
-        p3.σ2[i] += r1;
+        p2.σ1[i] = (p2.σ1[i] + r2) % MOD;
+        p2.σ2[i] = (p2.σ2[i] + r3) % MOD;
+        p3.σ1[i] = (p3.σ1[i] + r3) % MOD;
+        p3.σ2[i] = (p3.σ2[i] + r1) % MOD;
     }
     // 将置换后的新数据发送给p1
     p1.σ1 = p3.σ2;
@@ -485,15 +488,15 @@ void unShufflingProtocol(int index) {
     singleShuffle(p3.x2, p3.π1_inv, index);
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    int r1 = static_cast<int>(generateRandomInteger(0, 10));
-    int r2 = static_cast<int>(generateRandomInteger(0, 10));
-    int r3 = -r1 - r2;
+    long long r1 = generateRandomInteger(0, 100);
+    long long r2 = generateRandomInteger(0, 100);
+    long long r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p2.x1[i][index] += r2;
-        p2.x2[i][index] += r3;
-        p3.x1[i][index] += r3;
-        p3.x2[i][index] += r1;
+        p2.x1[i][index] = (p2.x1[i][index] + r2) % MOD;
+        p2.x2[i][index] = (p2.x2[i][index] + r3) % MOD;
+        p3.x1[i][index] = (p3.x1[i][index] + r3) % MOD;
+        p3.x2[i][index] = (p3.x2[i][index] + r1) % MOD;
     }
     // 将置换后的新数据发送给p1
     p1.x1 = p3.x2;
@@ -506,15 +509,15 @@ void unShufflingProtocol(int index) {
     singleShuffle(p2.x2, p2.π1_inv, index);
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    r1 = static_cast<int>(generateRandomInteger(0, 10));
-    r2 = static_cast<int>(generateRandomInteger(0, 10));
+    r1 = generateRandomInteger(0, 100);
+    r2 = generateRandomInteger(0, 100);
     r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p1.x1[i][index] += r1;
-        p1.x2[i][index] += r2;
-        p2.x1[i][index] += r2;
-        p2.x2[i][index] += r3;
+        p1.x1[i][index] = (p1.x1[i][index] + r1) % MOD;
+        p1.x2[i][index] = (p1.x2[i][index] + r2) % MOD;
+        p2.x1[i][index] = (p2.x1[i][index] + r2) % MOD;
+        p2.x2[i][index] = (p2.x2[i][index] + r3) % MOD;
     }
     // 将置换后的新数据发送给p3
     p3.x1 = p2.x2;
@@ -527,15 +530,15 @@ void unShufflingProtocol(int index) {
     singleShuffle(p3.x2, p3.π2_inv, index);
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    r1 = static_cast<int>(generateRandomInteger(0, 10));
-    r2 = static_cast<int>(generateRandomInteger(0, 10));
+    r1 = generateRandomInteger(0, 100);
+    r2 = generateRandomInteger(0, 100);
     r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p1.x1[i][index] += r1;
-        p1.x2[i][index] += r2;
-        p3.x1[i][index] += r3;
-        p3.x2[i][index] += r1;
+        p1.x1[i][index] = (p1.x1[i][index] + r1) % MOD;
+        p1.x2[i][index] = (p1.x2[i][index] + r2) % MOD;
+        p3.x1[i][index] = (p3.x1[i][index] + r3) % MOD;
+        p3.x2[i][index] = (p3.x2[i][index] + r1) % MOD;
     }
     // 将置换后的新数据发送给p2
     p2.x1 = p1.x2;
@@ -557,15 +560,15 @@ void unShufflingProtocol_ρ() {
     singleShuffle(p3.ρ2, p3.π1_inv);
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    int r1 = static_cast<int>(generateRandomInteger(0, 10));
-    int r2 = static_cast<int>(generateRandomInteger(0, 10));
-    int r3 = -r1 - r2;
+    long long r1 = generateRandomInteger(0, 100);
+    long long r2 = generateRandomInteger(0, 100);
+    long long r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p2.ρ1[i] += r2;
-        p2.ρ2[i] += r3;
-        p3.ρ1[i] += r3;
-        p3.ρ2[i] += r1;
+        p2.ρ1[i] = (p2.ρ1[i] + r2) % MOD;
+        p2.ρ2[i] = (p2.ρ2[i] + r3) % MOD;
+        p3.ρ1[i] = (p3.ρ1[i] + r3) % MOD;
+        p3.ρ2[i] = (p3.ρ2[i] + r1) % MOD;
     }
     // 将置换后的新数据发送给p1
     p1.ρ1 = p3.ρ2;
@@ -578,15 +581,15 @@ void unShufflingProtocol_ρ() {
     singleShuffle(p2.ρ2, p2.π1_inv);
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    r1 = static_cast<int>(generateRandomInteger(0, 10));
-    r2 = static_cast<int>(generateRandomInteger(0, 10));
+    r1 = generateRandomInteger(0, 100);
+    r2 = generateRandomInteger(0, 100);
     r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p1.ρ1[i] += r1;
-        p1.ρ2[i] += r2;
-        p2.ρ1[i] += r2;
-        p2.ρ2[i] += r3;
+        p1.ρ1[i] = (p1.ρ1[i] + r1) % MOD;
+        p1.ρ2[i] = (p1.ρ2[i] + r2) % MOD;
+        p2.ρ1[i] = (p2.ρ1[i] + r2) % MOD;
+        p2.ρ2[i] = (p2.ρ2[i] + r3) % MOD;
     }
     // 将置换后的新数据发送给p3
     p3.ρ1 = p2.ρ2;
@@ -599,15 +602,15 @@ void unShufflingProtocol_ρ() {
     singleShuffle(p3.ρ2, p3.π2_inv);
     // 模拟reshare过程
     // 生成随机数r1,r2,r3，满足r1+r2+r3=0
-    r1 = static_cast<int>(generateRandomInteger(0, 10));
-    r2 = static_cast<int>(generateRandomInteger(0, 10));
+    r1 = generateRandomInteger(0, 100);
+    r2 = generateRandomInteger(0, 100);
     r3 = -r1 - r2;
     // 更新数据
     for (int i = 0; i < N; ++i) {
-        p1.ρ1[i] += r1;
-        p1.ρ2[i] += r2;
-        p3.ρ1[i] += r3;
-        p3.ρ2[i] += r1;
+        p1.ρ1[i] = (p1.ρ1[i] + r1) % MOD;
+        p1.ρ2[i] = (p1.ρ2[i] + r2) % MOD;
+        p3.ρ1[i] = (p3.ρ1[i] + r3) % MOD;
+        p3.ρ2[i] = (p3.ρ2[i] + r1) % MOD;
     }
     // 将置换后的新数据发送给p2
     p2.ρ1 = p1.ρ2;
@@ -620,7 +623,7 @@ void unShufflingProtocol_ρ() {
  * @return void
  */
 void genBitPerm(int index) {
-    vector<int> f0_1(N), f0_2(N), f0_3(N), f1_1(N), f1_2(N), f1_3(N), s0_1(N), s0_2(N), s0_3(N), s1_1(N), s1_2(N), s1_3(N), ρ_1(N), ρ_2(N), ρ_3(N);
+    vector<long long> f0_1(N), f0_2(N), f0_3(N), f1_1(N), f1_2(N), f1_3(N), s0_1(N), s0_2(N), s0_3(N), s1_1(N), s1_2(N), s1_3(N), ρ_1(N), ρ_2(N), ρ_3(N);
 
     // 计算共享的f0和f1
     for (int i = 0; i < N; ++i) {
@@ -633,34 +636,40 @@ void genBitPerm(int index) {
     }
 
     // 计算共享的s0
-    int sum1 = 0, sum2 = 0, sum3 = 0;
+    long long sum1 = 0, sum2 = 0, sum3 = 0;
     for (int i = 0; i < N; ++i) {
-        sum1 += f0_1[i];
+        // sum1 += f0_1[i];
+        sum1 = (sum1 + f0_1[i]) % MOD; // 防止溢出
         s0_1[i] = sum1;
-        sum2 += f0_2[i];
+        // sum2 += f0_2[i];
+        sum2 = (sum2 + f0_2[i]) % MOD; // 防止溢出
         s0_2[i] = sum2;
-        sum3 += f0_3[i];
+        // sum3 += f0_3[i];
+        sum3 = (sum3 + f0_3[i]) % MOD; // 防止溢出
         s0_3[i] = sum3;
     }
 
     // 计算共享的s1
     for (int i = 0; i < N; ++i) {
-        sum1 += f1_1[i];
+        // sum1 += f1_1[i];
+        sum1 = (sum1 + f1_1[i]) % MOD; // 防止溢出
         s1_1[i] = sum1;
-        sum2 += f1_2[i];
+        // sum2 += f1_2[i];
+        sum2 = (sum2 + f1_2[i]) % MOD; // 防止溢出
         s1_2[i] = sum2;
-        sum3 += f1_3[i];
+        // sum3 += f1_3[i];
+        sum3 = (sum3 + f1_3[i]) % MOD; // 防止溢出
         s1_3[i] = sum3;
     }
 
-    int k;
+    long long k = 0;
 
     // 计算共享的置换ρ
     for (int i = 0; i < N; ++i) {
-        k = p1.x1[i][index] + p1.x2[i][index] + p2.x2[i][index]; // 计算k的指定位
-        ρ_1[i] = (1 - k) * s0_1[i] + k * s1_1[i];
-        ρ_2[i] = (1 - k) * s0_2[i] + k * s1_2[i];
-        ρ_3[i] = (1 - k) * s0_3[i] + k * s1_3[i];
+        k = (p1.x1[i][index] + p1.x2[i][index] + p2.x2[i][index]) % MOD; // 计算k的指定位
+        ρ_1[i] = (((1 - k) * s0_1[i]) % MOD + (k * s1_1[i]) % MOD) % MOD;
+        ρ_2[i] = (((1 - k) * s0_2[i]) % MOD + (k * s1_2[i]) % MOD) % MOD;
+        ρ_3[i] = (((1 - k) * s0_3[i]) % MOD + (k * s1_3[i]) % MOD) % MOD;
     }
 
     // 更新数据
@@ -696,9 +705,9 @@ void applyPerm(int index) {
     shufflingProtocol(index);
 
     // 揭示洗牌后的ρ
-    vector<int> ρ_vector(N);
+    vector<long long> ρ_vector(N);
     for (int i = 0; i < N; ++i) {
-        ρ_vector[i] = p1.ρ1[i] + p1.ρ2[i] + p2.ρ2[i];
+        ρ_vector[i] = (p1.ρ1[i] + p1.ρ2[i] + p2.ρ2[i]) % MOD;
     }
 
     // 使用洗牌后的ρ对k的指定位进行置换
@@ -716,7 +725,7 @@ void applyPerm(int index) {
  */
 void composePerm() {
     // ρ的信息不能变，保存ρ的信息
-    vector<int> ρ1_vector(p1.ρ1), ρ2_vector(p1.ρ2), ρ3_vector(p2.ρ2);
+    vector<long long> ρ1_vector(p1.ρ1), ρ2_vector(p1.ρ2), ρ3_vector(p2.ρ2);
 
     // 生成共享的随机置换π
     generateSharedShuffle();
@@ -725,13 +734,13 @@ void composePerm() {
     shufflingProtocol_σ();
 
     // 揭示洗牌后的σ
-    vector<int> σ_vector(N);
+    vector<long long> σ_vector(N);
     for (int i = 0; i < N; ++i) {
-        σ_vector[i] = p1.σ1[i] + p1.σ2[i] + p2.σ2[i];
+        σ_vector[i] = (p1.σ1[i] + p1.σ2[i] + p2.σ2[i]) % MOD;
     }
 
     // 求洗牌后的σ的逆置换
-    vector<int> σ_inv_vector(N);
+    vector<long long> σ_inv_vector(N);
     for (int i = 0; i < N; ++i) {
         σ_inv_vector[σ_vector[i] - 1] = i + 1;
     }
@@ -805,14 +814,29 @@ void init_semi_honest_security() {
     // 初始化云服务器p1,p2,p3
     initSever();
 
+    auto start_time = high_resolution_clock::now(); // 记录函数开始时间
+
     // 将数据拆分为三份，并求数据的3方秘密共享
     for (int i = 0; i < N; i++) {
-        unsigned long long a = generateRandomInteger(0, data[i] >> 1); // 生成随机数a
-        unsigned long long b = generateRandomInteger(0, a >> 1); // 生成随机数b
-        unsigned long long c = data[i] - a - b; // 计算c
+        long long a = generateRandomInteger(0, data[i] >> 1); // 生成随机数a
+        long long b = generateRandomInteger(0, a >> 1); // 生成随机数b
+        long long c = data[i] - a - b; // 计算c
         // 对每个数据进行比特分解
         bitDecomposition(i, a, b, c);
     }
+
+    auto end_time = high_resolution_clock::now(); // 记录函数结束时间
+    duration<double, milli> total_duration = end_time - start_time;
+    printf("比特分解所需时间是：%f 毫秒\n", total_duration.count());
+    fflush(stdout);
+
+    // 拷贝原始共享的数据
+    x1_backups.resize(N);
+    x2_backups.resize(N);
+    x3_backups.resize(N);
+    x1_backups = p1.x1;
+    x2_backups = p1.x2;
+    x3_backups = p2.x2;
 }
 
 /**
@@ -820,8 +844,15 @@ void init_semi_honest_security() {
  * @return void
  */
 void semi_honest_sort() {
-    // 对数据进行排序
+    auto start_time = high_resolution_clock::now(); // 记录函数开始时间
+
+    // 获取排序
     genPerm();
+
+    auto end_time = high_resolution_clock::now(); // 记录函数结束时间
+    duration<double, milli> total_duration = end_time - start_time;
+    printf("获取排序所需时间是：%f 毫秒\n", total_duration.count());
+    fflush(stdout);
 
     cout << "获取的排序结果为：" << endl;
     // 揭示排序结果(测试打印排序的结果)
@@ -829,4 +860,147 @@ void semi_honest_sort() {
         cout << p1.σ1[i] + p1.σ2[i] + p2.σ2[i] << " ";
     }
     cout << endl;
+}
+
+/**
+ * @Method singleShuffle 对数据的整体进行单次置换
+ * @param x 数据
+ * @param π 置换
+ * @return void
+ */
+void singleShuffle(vector<vector<long long>> &x, vector<long long> &π) {
+    vector<vector<long long>> temp(N, vector<long long>(L)); // 临时数组，用于存储置换后的数据
+    for (int i = 0; i < N; i++) {
+        temp[π[i] - 1] = x[i];
+    }
+    for (int i = 0; i < N; i++) {
+        x[i] = temp[i];
+    }
+}
+
+/**
+ * @Method shufflingProtocol 完整的shuffling协议，对整体进行洗牌
+ * @return void
+ */
+void shufflingProtocol() {
+    // 服务器p1和p3联合做置换，置换后的数据发给p2
+    singleShuffle(p1.x1, p1.π1);
+    singleShuffle(p1.x2, p1.π1);
+    singleShuffle(p3.x1, p3.π2);
+    singleShuffle(p3.x2, p3.π2);
+    // 模拟reshare过程
+    // 生成随机数r1,r2,r3，满足r1+r2+r3=0
+    long long r1 = generateRandomInteger(0, 100);
+    long long r2 = generateRandomInteger(0, 100);
+    long long r3 = -r1 - r2;
+    // 更新数据
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < L; ++j) {
+            p1.x1[i][j] = (p1.x1[i][j] + r1) % MOD;
+            p1.x2[i][j] = (p1.x2[i][j] + r2) % MOD;
+            p3.x1[i][j] = (p3.x1[i][j] + r3) % MOD;
+            p3.x2[i][j] = (p3.x2[i][j] + r1) % MOD;
+        }
+    }
+    // 将置换后的新数据发送给p2
+    p2.x1 = p1.x2;
+    p2.x2 = p3.x1;
+
+    // 服务器p1和p2联合做置换，置换后的数据发给p3
+    singleShuffle(p1.x1, p1.π2);
+    singleShuffle(p1.x2, p1.π2);
+    singleShuffle(p2.x1, p2.π1);
+    singleShuffle(p2.x2, p2.π1);
+    // 模拟reshare过程
+    // 生成随机数r1,r2,r3，满足r1+r2+r3=0
+    r1 = generateRandomInteger(0, 100);
+    r2 = generateRandomInteger(0, 100);
+    r3 = -r1 - r2;
+    // 更新数据
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < L; ++j) {
+            p1.x1[i][j] = (p1.x1[i][j] + r1) % MOD;
+            p1.x2[i][j] = (p1.x2[i][j] + r2) % MOD;
+            p2.x1[i][j] = (p2.x1[i][j] + r2) % MOD;
+            p2.x2[i][j] = (p2.x2[i][j] + r3) % MOD;
+        }
+    }
+    // 将置换后的新数据发送给p3
+    p3.x1 = p2.x2;
+    p3.x2 = p1.x1;
+
+    // 服务器p2和p3联合做置换，置换后的数据发给p1
+    singleShuffle(p2.x1, p2.π2);
+    singleShuffle(p2.x2, p2.π2);
+    singleShuffle(p3.x1, p3.π1);
+    singleShuffle(p3.x2, p3.π1);
+    // 模拟reshare过程
+    // 生成随机数r1,r2,r3，满足r1+r2+r3=0
+    r1 = generateRandomInteger(0, 100);
+    r2 = generateRandomInteger(0, 100);
+    r3 = -r1 - r2;
+    // 更新数据
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < L; ++j) {
+            p2.x1[i][j] = (p2.x1[i][j] + r2) % MOD;
+            p2.x2[i][j] = (p2.x2[i][j] + r3) % MOD;
+            p3.x1[i][j] = (p3.x1[i][j] + r3) % MOD;
+            p3.x2[i][j] = (p3.x2[i][j] + r1) % MOD;
+        }
+    }
+    // 将置换后的新数据发送给p1
+    p1.x1 = p3.x2;
+    p1.x2 = p2.x1;
+}
+
+/**
+ * @Method: semi_honest_apply_sort 半诚实安全条件下应用排序
+ * @return void
+ */
+void semi_honest_apply_sort() {
+    // 复原原始的共享数据
+    p1.x1 = x1_backups;
+    p1.x2 = x2_backups;
+    p2.x1 = x2_backups;
+    p2.x2 = x3_backups;
+    p3.x1 = x3_backups;
+    p3.x2 = x1_backups;
+
+    auto start_time = high_resolution_clock::now(); // 记录函数开始时间
+
+    // 用组合的置换σ更新ρ的信息
+    p1.ρ1 = p1.σ1;
+    p1.ρ2 = p1.σ2;
+    p2.ρ1 = p2.σ1;
+    p2.ρ2 = p2.σ2;
+    p3.ρ1 = p3.σ1;
+    p3.ρ2 = p3.σ2;
+
+    // 生成共享的随机置换π
+    generateSharedShuffle();
+
+    // 对共享的ρ进行洗牌
+    shufflingProtocol_ρ();
+
+    // 对共享的x进行洗牌
+    shufflingProtocol();
+
+    // 揭示洗牌后的ρ
+    vector<long long> ρ_vector(N);
+    for (int i = 0; i < N; ++i) {
+        ρ_vector[i] = (p1.ρ1[i] + p1.ρ2[i] + p2.ρ2[i]) % MOD;
+    }
+
+    // 使用洗牌后的ρ对k的指定位进行置换
+    singleShuffle(p1.x1, ρ_vector);
+    singleShuffle(p1.x2, ρ_vector);
+    singleShuffle(p2.x1, ρ_vector);
+    singleShuffle(p2.x2, ρ_vector);
+    singleShuffle(p3.x1, ρ_vector);
+    singleShuffle(p3.x2, ρ_vector);
+
+    auto end_time = high_resolution_clock::now(); // 记录函数结束时间
+    duration<double, milli> total_duration = end_time - start_time;
+    printf("应用排序所需时间是：%f 毫秒\n", total_duration.count());
+    fflush(stdout);
 }
